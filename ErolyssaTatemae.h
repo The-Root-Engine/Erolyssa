@@ -19,7 +19,7 @@ public:
         
         printf("\033[0;37m[Erolyssa][Log] ");
         vprintf(InFormat, Args);  // NOLINT(clang-diagnostic-format-nonliteral)
-        printf("\e[0m\n");
+        printf("\033[0m\n");
         
         va_end(Args);
     }
