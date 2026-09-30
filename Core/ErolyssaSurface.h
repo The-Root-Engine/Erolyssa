@@ -2,32 +2,31 @@
 
 #pragma once
 
-#include <vulkan/vulkan.h>
-#include <vector>
+#include "ErolyssaInstance.h"
 
-class FErolyssaInstance;
+#include <SDL_video.h>
+#include <SDL_vulkan.h>
 
-class FErolyssaPhysicalDevice
+class FErolyssaSurface
 {
 public:
-    FErolyssaPhysicalDevice(const FErolyssaInstance& InInstance);
-    ~FErolyssaPhysicalDevice();
+    FErolyssaSurface(const FErolyssaInstance& InInstance, SDL_Window* InWindow) : Instance(InInstance)
+    {
+        check(InWindow != nullptr, "FErolyssaSurface: Window is null!");
+        check(SDL_Vulkan_CreateSurface(InWindow, Instance, &Handle) == SDL_TRUE, "FErolyssaSurface: SDL_Vulkan_CreateSurface failed: %s", SDL_GetError());
+    }
     
-    VkPhysicalDevice GetPhysicalHandle() const { return PhysicalDeviceHandle; }
-    VkDevice GetLogicalHandle() const { return DeviceHandle; }
-    VkQueue GetComputeQueue() const { return ComputeQueueHandle; }
-    uint32_t GetComputeQueueFamilyIndex() const { return ComputeQueueFamilyIndex; }
+    ~FErolyssaSurface()
+    {
+        if(Handle != VK_NULL_HANDLE) vkDestroySurfaceKHR(Instance, Handle, nullptr);
+    }
+    
+    FErolyssaSurface(const FErolyssaSurface&) = delete;
+    FErolyssaSurface& operator=(const FErolyssaSurface&) = delete;
+    
+    operator VkSurfaceKHR() const { return Handle; }
 
 private:
-    VkPhysicalDevice PhysicalDeviceHandle = VK_NULL_HANDLE;
-    VkDevice DeviceHandle = VK_NULL_HANDLE;
-    VkQueue ComputeQueueHandle = VK_NULL_HANDLE;
-    
-    uint32_t ComputeQueueFamilyIndex = 0xFFFFFFFF;
-    
-    void PickPhysicalDevice(VkInstance InstanceHandle);
-    void CreateLogicalDevice();
-    
-    int RateDeviceSuitability(VkPhysicalDevice Device);
-    uint32_t FindComputeQueueFamily(VkPhysicalDevice Device);
+    const FErolyssaInstance& Instance;
+    VkSurfaceKHR Handle = VK_NULL_HANDLE;
 };

@@ -1,22 +1,33 @@
+// Root Engine / Erolyssa
+
 #pragma once
 
-#include <vulkan/vulkan_core.h>
+#include "../ErolyssaIncludeVulkan.h"
+#include "../ErolyssaTatemae.h"
+#include "../Core/ErolyssaDevice.h"
 
-class FErolyssaPhysicalDevice;
-
-class FErolyssaFence
+class FErolyssaSemaphore
 {
-    
 public:
-    FErolyssaFence(FErolyssaPhysicalDevice& InDevice);
-    ~FErolyssaFence();
+    explicit FErolyssaSemaphore(const FErolyssaDevice& InDevice) : Device(InDevice)
+    {
+        VkSemaphoreCreateInfo CreateInfo{};
+        CreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+        
+        check(vkCreateSemaphore(Device, &CreateInfo, nullptr, &Handle) == VK_SUCCESS, "FErolyssaSemaphore: failed to create semaphore!");
+    }
     
-    void WaitFor();
-    void Reset();
-    VkFence GetHandle() const { return Handle; }
-
+    ~FErolyssaSemaphore()
+    {
+        if(Handle != VK_NULL_HANDLE) vkDestroySemaphore(Device, Handle, nullptr);
+    }
+    
+    FErolyssaSemaphore(const FErolyssaSemaphore&) = delete;
+    FErolyssaSemaphore& operator=(const FErolyssaSemaphore&) = delete;
+    
+    operator VkSemaphore() const { return Handle; }
+    
 private:
-    FErolyssaPhysicalDevice& Device;
-    
-    VkFence Handle = VK_NULL_HANDLE;
+    const FErolyssaDevice& Device;
+    VkSemaphore Handle = VK_NULL_HANDLE;
 };

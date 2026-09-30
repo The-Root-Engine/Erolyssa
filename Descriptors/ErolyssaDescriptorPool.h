@@ -10,7 +10,11 @@ struct FErolyssaDescriptorPool
     
 public:
     FErolyssaDescriptorPool(FErolyssaPhysicalDevice& InDevice) : Device(InDevice) {}
-    ~FErolyssaDescriptorPool();
+    ~FErolyssaDescriptorPool()
+    {
+        if(Handle != VK_NULL_HANDLE)
+            vkDestroyDescriptorPool(Device.GetLogicalHandle(), Handle, nullptr);
+    }
     
     VkDescriptorPool GetHandle() { return Handle; }
 

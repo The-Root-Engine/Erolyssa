@@ -4,7 +4,7 @@
 
 #include <vulkan/vulkan_core.h>
 
-class FErolyssaPhysicalDevice;
+class FErolyssaDevice;
 
 class FErolyssaPipeline
 {
@@ -12,7 +12,7 @@ class FErolyssaPipeline
     friend struct FErolyssaDescriptorPoolBuilder;
     
 public:
-    FErolyssaPipeline(FErolyssaPhysicalDevice& InDevice) : Device(InDevice) {}
+    FErolyssaPipeline(FErolyssaDevice& InDevice) : Device(InDevice) {}
     ~FErolyssaPipeline();
     
     operator VkPipeline() const { return PipelineHandle; }
@@ -20,7 +20,7 @@ public:
     operator VkDescriptorSetLayout() const { return DescriptorSetLayoutHandle; }
 
 private:
-    FErolyssaPhysicalDevice& Device;
+    FErolyssaDevice& Device;
     
     VkPipeline PipelineHandle = VK_NULL_HANDLE;
     VkPipelineLayout PipelineLayoutHandle = VK_NULL_HANDLE;

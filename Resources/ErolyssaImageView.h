@@ -4,13 +4,13 @@
 
 #include <vulkan/vulkan.h>
 
-class FErolyssaPhysicalDevice;
+class FErolyssaDevice;
 
-class FErolyssaBuffer
+class FErolyssaImageView
 {
 public:
-    FErolyssaBuffer(const FErolyssaPhysicalDevice& InDevice, VkDeviceSize InSize, VkBufferUsageFlags InUsage, VkMemoryPropertyFlags InProperties);
-    ~FErolyssaBuffer();
+    FErolyssaImageView(const FErolyssaDevice& InDevice, FErolyssaSize InSize, VkBufferUsageFlags InUsage, VkMemoryPropertyFlags InProperties);
+    ~FErolyssaImageView();
     
     void* Map();
     void Unmap();
@@ -18,15 +18,13 @@ public:
     
     VkBuffer GetHandle() const { return BufferHandle; }
     VkDeviceMemory GetMemoryHandle() const { return MemoryHandle; }
-    VkDeviceSize GetSize() const { return Size; }
+    FErolyssaSize GetSize() const { return Size; }
 
 private:
     VkDevice LogicalDeviceRef = VK_NULL_HANDLE;
     
     VkBuffer BufferHandle = VK_NULL_HANDLE;
     VkDeviceMemory MemoryHandle = VK_NULL_HANDLE;
-    VkDeviceSize Size = 0;
+    FErolyssaSize Size = 0;
     void* MappedPointer = nullptr;
-
-    static uint32_t FindMemoryType(VkPhysicalDevice PhysicalDevice, uint32_t TypeFilter, VkMemoryPropertyFlags Properties);
 };
