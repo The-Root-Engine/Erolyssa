@@ -77,6 +77,8 @@ public:
     FErolyssaBuffer& operator=(const FErolyssaBuffer&) = delete;
     
     operator VkBuffer() const { return Handle; }
+    operator const VkBuffer*() const { return &Handle; }
+    bool IsValid() const { return Handle != VK_NULL_HANDLE; }
     
     VkDeviceMemory GetMemory() const { return Memory; }
     FErolyssaSize GetSize() const { return Size; }
@@ -114,8 +116,6 @@ public:
     
     bool IsHostVisible() const { return EnumHasAnyFlags(MemoryProperties, EErolyssaMemoryProperty::HostVisible); }
     bool IsDeviceLocal() const { return EnumHasAnyFlags(MemoryProperties, EErolyssaMemoryProperty::DeviceLocal); }
-    
-    const FErolyssaDevice& GetDevice() const { return Device; }
 
 private:
     const FErolyssaDevice& Device;
