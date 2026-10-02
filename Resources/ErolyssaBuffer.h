@@ -36,10 +36,29 @@ class FErolyssaBuffer
 {
     
 public:
-    FErolyssaBuffer(
-        const FErolyssaDevice& InDevice, const FErolyssaSize InSize,
-        const EErolyssaBufferUsage InUsage, const EErolyssaMemoryProperty InMemoryProperties
-    ) : Device(InDevice), Size(InSize), MemoryProperties(InMemoryProperties)
+    FErolyssaBuffer(const FErolyssaDevice& InDevice)
+        : Device(InDevice) {}
+    
+    FErolyssaBuffer(const FErolyssaDevice& InDevice, const FErolyssaSize InSize, const EErolyssaBufferUsage InUsage, const EErolyssaMemoryProperty InMemoryProperties)
+        : Device(InDevice) { Initialize(InSize, InUsage, InMemoryProperties); }
+    
+    ~FErolyssaBuffer()
+    {
+        // if(MappedPointer != nullptr) Unmap();
+        if(BufferHandle != VK_NULL_HANDLE) vkDestroyBuffer(Device, BufferHandle, nullptr);
+        if(MemoryHandle != VK_NULL_HANDLE) vkFreeMemory(Device, MemoryHandle, nullptr);
+    }
+    
+    FErolyssaBuffer(const FErolyssaBuffer&) = delete;
+    FErolyssaBuffer& operator=(const FErolyssaBuffer&) = delete;
+    
+    operator VkBuffer() const { return BufferHandle; }
+    operator const VkBuffer*() const { return &BufferHandle; }
+    bool IsValid() const { return BufferHandle != VK_NULL_HANDLE; }
+    
+    // FErolyssaSize GetSize() const { return Size; }
+    
+    void Initialize(const FErolyssaSize InSize, const EErolyssaBufferUsage InUsage, const EErolyssaMemoryProperty InMemoryProperties)
     {
         check(InSize > 0, "FErolyssaBuffer: size must be > 0!");
         
@@ -49,10 +68,10 @@ public:
         BufferInfo.usage = ToVulkan(InUsage);
         BufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         
-        check(vkCreateBuffer(Device, &BufferInfo, nullptr, &Handle) == VK_SUCCESS, "FErolyssaBuffer: failed to create buffer!");
+        check(vkCreateBuffer(Device, &BufferInfo, nullptr, &BufferHandle) == VK_SUCCESS, "FErolyssaBuffer: failed to create buffer!");
         
         VkMemoryRequirements MemReq{};
-        vkGetBufferMemoryRequirements(Device, Handle, &MemReq);
+        vkGetBufferMemoryRequirements(Device, BufferHandle, &MemReq);
         
         VkMemoryAllocateFlagsInfo AllocFlagsInfo{};
         AllocFlagsInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
@@ -65,78 +84,71 @@ public:
         AllocInfo.allocationSize = MemReq.size;
         AllocInfo.memoryTypeIndex = FindMemoryType(Device, MemReq.memoryTypeBits, ToVulkan(InMemoryProperties));
         
-        check(vkAllocateMemory(Device, &AllocInfo, nullptr, &Memory) == VK_SUCCESS, "FErolyssaBuffer: failed to allocate memory!");
-        check(vkBindBufferMemory(Device, Handle, Memory, 0) == VK_SUCCESS, "FErolyssaBuffer: failed to bind memory!");
+        check(vkAllocateMemory(Device, &AllocInfo, nullptr, &MemoryHandle) == VK_SUCCESS, "FErolyssaBuffer: failed to allocate memory!");
+        check(vkBindBufferMemory(Device, BufferHandle, MemoryHandle, 0) == VK_SUCCESS, "FErolyssaBuffer: failed to bind memory!");
     }
-    
-    ~FErolyssaBuffer()
-    {
-        if(MappedPointer != nullptr) Unmap();
-        if(Handle != VK_NULL_HANDLE) vkDestroyBuffer(Device, Handle, nullptr);
-        if(Memory != VK_NULL_HANDLE) vkFreeMemory(Device, Memory, nullptr);
-    }
-    
-    FErolyssaBuffer(const FErolyssaBuffer&) = delete;
-    FErolyssaBuffer& operator=(const FErolyssaBuffer&) = delete;
-    
-    operator VkBuffer() const { return Handle; }
-    operator const VkBuffer*() const { return &Handle; }
-    bool IsValid() const { return Handle != VK_NULL_HANDLE; }
-    
-    VkDeviceMemory GetMemory() const { return Memory; }
-    FErolyssaSize GetSize() const { return Size; }
     
     void Upload(const void* InData, const FErolyssaSize InSize, const FErolyssaSize InOffset = 0) const
     {
         check(InSize > 0, "FErolyssaBuffer::Upload: size must be > 0!");
-        check(InOffset + InSize <= Size, "FErolyssaBuffer::Upload: out of bounds!");
-        check(IsHostVisible(), "FErolyssaBuffer::Upload: buffer is not host-visible!");
+        // check(InOffset + InSize <= Size, "FErolyssaBuffer::Upload: out of bounds!");
+        // check(IsHostVisible(), "FErolyssaBuffer::Upload: buffer is not host-visible!");
         
-        void* Data = nullptr;
-        check(vkMapMemory(Device, Memory, InOffset, InSize, 0, &Data) == VK_SUCCESS, "FErolyssaBuffer::Upload: failed to map memory!");
+        void* Data = Map();
         memcpy(Data, InData, InSize);
-        
-        vkUnmapMemory(Device, Memory);
+        Unmap();
     }
     
-    void* Map(const FErolyssaSize InOffset = 0, const FErolyssaSize InSize = VK_WHOLE_SIZE)
+    void* Map(const FErolyssaSize InOffset = 0, const FErolyssaSize InSize = VK_WHOLE_SIZE) const
     {
-        check(IsHostVisible(), "FErolyssaBuffer::Map: buffer is not host-visible!");
-        check(MappedPointer == nullptr, "FErolyssaBuffer::Map: already mapped!");
-        check(vkMapMemory(Device, Memory, InOffset, InSize, 0, &MappedPointer) == VK_SUCCESS, "FErolyssaBuffer::Map: failed to map memory!");
-        
+        // check(IsHostVisible(), "FErolyssaBuffer::Map: buffer is not host-visible!");
+        // check(MappedPointer == nullptr, "FErolyssaBuffer::Map: already mapped!");
+        void* MappedPointer = nullptr;
+        check(vkMapMemory(Device, MemoryHandle, InOffset, InSize, 0, &MappedPointer) == VK_SUCCESS, "FErolyssaBuffer::Map: failed to map memory!");
         return MappedPointer;
     }
     
-    void Unmap()
+    void Unmap() const
     {
-        if(MappedPointer != nullptr)
-        {
-            vkUnmapMemory(Device, Memory);
-            MappedPointer = nullptr;
-        }
+        // if(MappedPointer == nullptr) return;
+        vkUnmapMemory(Device, MemoryHandle);
+        // MappedPointer = nullptr;
     }
     
     FErolyssaAddress GetAddress() const
     {
         VkBufferDeviceAddressInfo Info{};
         Info.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
-        Info.buffer = Handle;
+        Info.buffer = BufferHandle;
         return vkGetBufferDeviceAddress(Device, &Info);
     }
     
+    /*
     bool IsHostVisible() const { return EnumHasAnyFlags(MemoryProperties, EErolyssaMemoryProperty::HostVisible); }
     bool IsDeviceLocal() const { return EnumHasAnyFlags(MemoryProperties, EErolyssaMemoryProperty::DeviceLocal); }
+    */
+    
+    static uint32_t FindMemoryType(const VkPhysicalDevice InPhysical, const uint32_t InTypeFilter, const VkMemoryPropertyFlags InProperties)
+    {
+        VkPhysicalDeviceMemoryProperties MemProps{};
+        vkGetPhysicalDeviceMemoryProperties(InPhysical, &MemProps);
+        
+        for(uint32_t i = 0; i < MemProps.memoryTypeCount; ++i)
+            if((InTypeFilter & (1u << i)) && (MemProps.memoryTypes[i].propertyFlags & InProperties) == InProperties)
+                return i;
+        
+        FErolyssaDebug::Terminate("FErolyssaBuffer: no suitable memory type found!");
+        return 0xFFFFFFFF;
+    }
 
 private:
     const FErolyssaDevice& Device;
     
-    VkBuffer Handle = VK_NULL_HANDLE;
-    VkDeviceMemory Memory = VK_NULL_HANDLE;
-    FErolyssaSize Size = 0;
-    EErolyssaMemoryProperty MemoryProperties = EErolyssaMemoryProperty::None;
-    
-    void* MappedPointer = nullptr;
+    VkBuffer BufferHandle = VK_NULL_HANDLE;
+    VkDeviceMemory MemoryHandle = VK_NULL_HANDLE;
+    // FErolyssaSize Size = 0;
+    // EErolyssaMemoryProperty MemoryProperties = EErolyssaMemoryProperty::None;
+    // void* MappedPointer = nullptr;
     
     static VkBufferUsageFlags ToVulkan(const EErolyssaBufferUsage InUsage)
     {
@@ -161,18 +173,5 @@ private:
         if(EnumHasAnyFlags(InProps, EErolyssaMemoryProperty::HostCached     )) Result |= VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
         if(EnumHasAnyFlags(InProps, EErolyssaMemoryProperty::LazilyAllocated)) Result |= VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
         return Result;
-    }
-    
-    static uint32_t FindMemoryType(const VkPhysicalDevice InPhysical, const uint32_t InTypeFilter, const VkMemoryPropertyFlags InProperties)
-    {
-        VkPhysicalDeviceMemoryProperties MemProps{};
-        vkGetPhysicalDeviceMemoryProperties(InPhysical, &MemProps);
-        
-        for(uint32_t i = 0; i < MemProps.memoryTypeCount; ++i)
-            if((InTypeFilter & (1u << i)) && (MemProps.memoryTypes[i].propertyFlags & InProperties) == InProperties)
-                return i;
-        
-        FErolyssaDebug::Terminate("FErolyssaBuffer: no suitable memory type found!");
-        return 0xFFFFFFFF;
     }
 };

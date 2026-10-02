@@ -95,13 +95,19 @@ public:
         
         VkPhysicalDeviceVulkan12Features Features12{};
         Features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-        Features12.pNext = &Features11; // Связываем: 1.2 указывает на 1.1
+        Features12.pNext = &Features11;
         Features12.drawIndirectCount = VK_TRUE;
         Features12.bufferDeviceAddress = VK_TRUE;
         
+        VkPhysicalDeviceVulkan13Features Features13{};
+        Features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+        Features13.pNext = &Features12;
+        Features13.dynamicRendering = VK_TRUE;
+        Features13.synchronization2 = VK_TRUE;
+        
         VkDeviceCreateInfo CreateInfo{};
         CreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-        CreateInfo.pNext = &Features12;
+        CreateInfo.pNext = &Features13;
         CreateInfo.queueCreateInfoCount = static_cast<uint32_t>(QueueInfos.size());
         CreateInfo.pQueueCreateInfos = QueueInfos.data();
         CreateInfo.pEnabledFeatures = &Features; 

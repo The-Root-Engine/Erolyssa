@@ -236,7 +236,7 @@ enum class EErolyssaColorWriteMask : uint8_t
 };
 ENUM_CLASS_FLAGS(EErolyssaColorWriteMask)
 
-inline VkColorComponentFlags ToVulkan(EErolyssaColorWriteMask InMask)
+inline VkColorComponentFlags ToVulkan(const EErolyssaColorWriteMask InMask)
 {
     VkColorComponentFlags Result = 0;
     if(EnumHasAnyFlags(InMask, EErolyssaColorWriteMask::R)) Result |= VK_COLOR_COMPONENT_R_BIT;
@@ -316,7 +316,6 @@ public:
         VkPipelineColorBlendStateCreateInfo& OutState,
         std::array<VkPipelineColorBlendAttachmentState, Count>& OutAttachments)
     {
-        // Заполняем каждый attachment по индексу
         BuildAll(OutAttachments, std::index_sequence_for<ColorBlendAttachments...>{});
         
         OutState = {};

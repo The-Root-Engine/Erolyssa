@@ -125,7 +125,7 @@ private:
     
     std::vector<VkImage> Images;
     std::vector<VkImageView> ImageViews;
-
+    
     static VkSurfaceFormatKHR ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& InFormats)
     {
         for(const auto& F : InFormats)
