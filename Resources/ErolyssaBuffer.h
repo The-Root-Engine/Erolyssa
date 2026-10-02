@@ -9,14 +9,15 @@
 
 enum class EErolyssaBufferUsage : uint8_t
 {
-    None        = 0,
-    Vertex      = 1 << 0,
-    Index       = 1 << 1,
-    Uniform     = 1 << 2,
-    Storage     = 1 << 3,
-    Indirect    = 1 << 4,
-    TransferSrc = 1 << 5,
-    TransferDst = 1 << 6,
+    None          = 0,
+    Vertex        = 1 << 0,
+    Index         = 1 << 1,
+    Uniform       = 1 << 2,
+    Storage       = 1 << 3,
+    Indirect      = 1 << 4,
+    TransferSrc   = 1 << 5,
+    TransferDst   = 1 << 6,
+    DeviceAddress = 1 << 7,
 };
 ENUM_CLASS_FLAGS(EErolyssaBufferUsage)
 
@@ -53,14 +54,16 @@ public:
         VkMemoryRequirements MemReq{};
         vkGetBufferMemoryRequirements(Device, Handle, &MemReq);
         
+        VkMemoryAllocateFlagsInfo AllocFlagsInfo{};
+        AllocFlagsInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
+        AllocFlagsInfo.pNext = nullptr;
+        if(EnumHasAnyFlags(InUsage, EErolyssaBufferUsage::DeviceAddress)) AllocFlagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+        
         VkMemoryAllocateInfo AllocInfo{};
         AllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        AllocInfo.pNext = &AllocFlagsInfo;
         AllocInfo.allocationSize = MemReq.size;
-        AllocInfo.memoryTypeIndex = FindMemoryType(
-            Device,
-            MemReq.memoryTypeBits,
-            ToVulkan(InMemoryProperties)
-        );
+        AllocInfo.memoryTypeIndex = FindMemoryType(Device, MemReq.memoryTypeBits, ToVulkan(InMemoryProperties));
         
         check(vkAllocateMemory(Device, &AllocInfo, nullptr, &Memory) == VK_SUCCESS, "FErolyssaBuffer: failed to allocate memory!");
         check(vkBindBufferMemory(Device, Handle, Memory, 0) == VK_SUCCESS, "FErolyssaBuffer: failed to bind memory!");
@@ -114,6 +117,14 @@ public:
         }
     }
     
+    FErolyssaAddress GetAddress() const
+    {
+        VkBufferDeviceAddressInfo Info{};
+        Info.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+        Info.buffer = Handle;
+        return vkGetBufferDeviceAddress(Device, &Info);
+    }
+    
     bool IsHostVisible() const { return EnumHasAnyFlags(MemoryProperties, EErolyssaMemoryProperty::HostVisible); }
     bool IsDeviceLocal() const { return EnumHasAnyFlags(MemoryProperties, EErolyssaMemoryProperty::DeviceLocal); }
 
@@ -130,28 +141,25 @@ private:
     static VkBufferUsageFlags ToVulkan(const EErolyssaBufferUsage InUsage)
     {
         VkBufferUsageFlags Result = 0;
-    
-        if(EnumHasAnyFlags(InUsage, EErolyssaBufferUsage::Vertex     )) Result |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-        if(EnumHasAnyFlags(InUsage, EErolyssaBufferUsage::Index      )) Result |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-        if(EnumHasAnyFlags(InUsage, EErolyssaBufferUsage::Uniform    )) Result |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-        if(EnumHasAnyFlags(InUsage, EErolyssaBufferUsage::Storage    )) Result |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-        if(EnumHasAnyFlags(InUsage, EErolyssaBufferUsage::Indirect   )) Result |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-        if(EnumHasAnyFlags(InUsage, EErolyssaBufferUsage::TransferSrc)) Result |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-        if(EnumHasAnyFlags(InUsage, EErolyssaBufferUsage::TransferDst)) Result |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    
+        if(EnumHasAnyFlags(InUsage, EErolyssaBufferUsage::Vertex       )) Result |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        if(EnumHasAnyFlags(InUsage, EErolyssaBufferUsage::Index        )) Result |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+        if(EnumHasAnyFlags(InUsage, EErolyssaBufferUsage::Uniform      )) Result |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        if(EnumHasAnyFlags(InUsage, EErolyssaBufferUsage::Storage      )) Result |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        if(EnumHasAnyFlags(InUsage, EErolyssaBufferUsage::Indirect     )) Result |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+        if(EnumHasAnyFlags(InUsage, EErolyssaBufferUsage::TransferSrc  )) Result |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        if(EnumHasAnyFlags(InUsage, EErolyssaBufferUsage::TransferDst  )) Result |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        if(EnumHasAnyFlags(InUsage, EErolyssaBufferUsage::DeviceAddress)) Result |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         return Result;
     }
     
     static VkMemoryPropertyFlags ToVulkan(const EErolyssaMemoryProperty InProps)
     {
         VkMemoryPropertyFlags Result = 0;
-    
         if(EnumHasAnyFlags(InProps, EErolyssaMemoryProperty::DeviceLocal    )) Result |= VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
         if(EnumHasAnyFlags(InProps, EErolyssaMemoryProperty::HostVisible    )) Result |= VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
         if(EnumHasAnyFlags(InProps, EErolyssaMemoryProperty::HostCoherent   )) Result |= VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
         if(EnumHasAnyFlags(InProps, EErolyssaMemoryProperty::HostCached     )) Result |= VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
         if(EnumHasAnyFlags(InProps, EErolyssaMemoryProperty::LazilyAllocated)) Result |= VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
-    
         return Result;
     }
     
@@ -159,16 +167,11 @@ private:
     {
         VkPhysicalDeviceMemoryProperties MemProps{};
         vkGetPhysicalDeviceMemoryProperties(InPhysical, &MemProps);
-    
+        
         for(uint32_t i = 0; i < MemProps.memoryTypeCount; ++i)
-        {
-            if((InTypeFilter & (1u << i)) &&
-               (MemProps.memoryTypes[i].propertyFlags & InProperties) == InProperties)
-            {
+            if((InTypeFilter & (1u << i)) && (MemProps.memoryTypes[i].propertyFlags & InProperties) == InProperties)
                 return i;
-            }
-        }
-    
+        
         FErolyssaDebug::Terminate("FErolyssaBuffer: no suitable memory type found!");
         return 0xFFFFFFFF;
     }

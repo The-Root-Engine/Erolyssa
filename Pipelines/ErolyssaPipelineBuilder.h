@@ -90,7 +90,7 @@ inline VkCompareOp ToVulkan(EErolyssaCompareOp InOp)
 template<
     EErolyssaPolygonMode PolygonMode,
     EErolyssaCullMode CullMode,
-    EErolyssaFrontFace FrontFace = EErolyssaFrontFace::Clockwise
+    EErolyssaFrontFace FrontFace = EErolyssaFrontFace::CounterClockwise
 >
 struct TErolyssaPipelineStateRasterization
 {

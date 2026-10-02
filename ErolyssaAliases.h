@@ -9,3 +9,4 @@
 using FErolyssaQueueFamily = uint32_t;
 using FErolyssaQueue = VkQueue;
 using FErolyssaSize = VkDeviceSize;
+using FErolyssaAddress = VkDeviceAddress;

@@ -84,14 +84,27 @@ public:
         for(const char* Ext : Extensions)
             check(PhysicalDevice.SupportsExtension(Ext), "FErolyssaDevice: GPU does not support extension '%s'", Ext);
         
-        VkPhysicalDeviceFeatures enabledFeatures{};
-        enabledFeatures.geometryShader = VK_TRUE;
+        VkPhysicalDeviceFeatures Features{};
+        Features.geometryShader = VK_TRUE;
+        Features.shaderInt64 = VK_TRUE;
+        
+        VkPhysicalDeviceVulkan11Features Features11{};
+        Features11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+        Features11.pNext = nullptr;
+        Features11.shaderDrawParameters = VK_TRUE;
+        
+        VkPhysicalDeviceVulkan12Features Features12{};
+        Features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+        Features12.pNext = &Features11; // Связываем: 1.2 указывает на 1.1
+        Features12.drawIndirectCount = VK_TRUE;
+        Features12.bufferDeviceAddress = VK_TRUE;
         
         VkDeviceCreateInfo CreateInfo{};
         CreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        CreateInfo.pNext = &Features12;
         CreateInfo.queueCreateInfoCount = static_cast<uint32_t>(QueueInfos.size());
         CreateInfo.pQueueCreateInfos = QueueInfos.data();
-        CreateInfo.pEnabledFeatures = &enabledFeatures;
+        CreateInfo.pEnabledFeatures = &Features; 
         CreateInfo.enabledExtensionCount = static_cast<uint32_t>(Extensions.size());
         CreateInfo.ppEnabledExtensionNames = Extensions.empty() ? nullptr : Extensions.data();
         CreateInfo.enabledLayerCount = 0;

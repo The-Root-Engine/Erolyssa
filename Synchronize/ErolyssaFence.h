@@ -28,6 +28,7 @@ public:
     FErolyssaFence& operator=(const FErolyssaFence&) = delete;
     
     operator VkFence() const { return Handle; }
+    operator const VkFence*() const { return &Handle; }
     
     void Wait(const uint64_t InTimeout = UINT64_MAX) const { vkWaitForFences(Device, 1, &Handle, VK_TRUE, InTimeout); }
     void Reset() const { vkResetFences(Device, 1, &Handle); }

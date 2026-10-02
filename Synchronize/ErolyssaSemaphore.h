@@ -26,7 +26,8 @@ public:
     FErolyssaSemaphore& operator=(const FErolyssaSemaphore&) = delete;
     
     operator VkSemaphore() const { return Handle; }
-    
+    operator const VkSemaphore*() const { return &Handle; }
+
 private:
     const FErolyssaDevice& Device;
     VkSemaphore Handle = VK_NULL_HANDLE;
