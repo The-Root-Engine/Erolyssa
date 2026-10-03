@@ -4,9 +4,7 @@
 
 #include "ErolyssaIncludeVulkan.h"
 
-#include <cstdint>
-
-using FErolyssaQueueFamily = uint32_t;
+using FErolyssaQueueFamily = uint32;
 using FErolyssaQueue = VkQueue;
 using FErolyssaSize = VkDeviceSize;
 using FErolyssaAddress = VkDeviceAddress;

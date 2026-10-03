@@ -2,9 +2,7 @@
 
 #pragma once
 
-#include <cstdint>
-
-enum class EErolyssaShaderType : uint8_t
+enum class EErolyssaShaderType : uint8
 {
     Vertex      = 0,
     Fragment    = 1,
@@ -28,7 +26,7 @@ struct FErolyssaShaderBinding
 {
 
 public:
-    uint32_t Binding;
+    uint32 Binding;
 };
 
 struct FErolyssaShader

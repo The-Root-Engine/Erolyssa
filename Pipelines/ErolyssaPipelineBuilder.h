@@ -6,10 +6,7 @@
 #include "../ErolyssaTatemae.h"
 #include "../ErolyssaAliases.h"
 
-#include <array>
-#include <utility>
-
-enum class EErolyssaCullMode : uint8_t
+enum class EErolyssaCullMode : uint8
 {
     None  = 0,
     Front = 1 << 0,
@@ -17,20 +14,20 @@ enum class EErolyssaCullMode : uint8_t
 };
 ENUM_CLASS_FLAGS(EErolyssaCullMode)
 
-enum class EErolyssaPolygonMode : uint8_t
+enum class EErolyssaPolygonMode : uint8
 {
     Fill  = 0,
     Line  = 1,
     Point = 2,
 };
 
-enum class EErolyssaFrontFace : uint8_t
+enum class EErolyssaFrontFace : uint8
 {
     Clockwise        = 0,
     CounterClockwise = 1,
 };
 
-enum class EErolyssaCompareOp : uint8_t
+enum class EErolyssaCompareOp : uint8
 {
     Never          = 0,
     Less           = 1,
@@ -132,7 +129,7 @@ struct TErolyssaPipelineStateDepthStencil
     }
 };
 
-enum class EErolyssaSampleCount : uint8_t
+enum class EErolyssaSampleCount : uint8
 {
     Count1  = 1,
     Count2  = 2,
@@ -158,7 +155,7 @@ inline VkSampleCountFlagBits ToVulkan(const EErolyssaSampleCount InSampleCount)
     return VK_SAMPLE_COUNT_1_BIT;
 }
 
-enum class EErolyssaPrimitiveTopology : uint8_t
+enum class EErolyssaPrimitiveTopology : uint8
 {
     PointList     = 0,
     LineList      = 1,
@@ -224,7 +221,7 @@ struct TErolyssaPipelineStateInputAssembly
     }
 };
 
-enum class EErolyssaColorWriteMask : uint8_t
+enum class EErolyssaColorWriteMask : uint8
 {
     None = 0,
     R    = 1 << 0,
@@ -246,7 +243,7 @@ inline VkColorComponentFlags ToVulkan(const EErolyssaColorWriteMask InMask)
     return Result;
 }
 
-enum class EErolyssaBlendMode : uint8_t
+enum class EErolyssaBlendMode : uint8
 {
     Opaque     = 0,
     AlphaBlend = 1,
@@ -314,15 +311,15 @@ public:
     
     static void Build(
         VkPipelineColorBlendStateCreateInfo& OutState,
-        std::array<VkPipelineColorBlendAttachmentState, Count>& OutAttachments)
+        TStaticArray<VkPipelineColorBlendAttachmentState, Count>& OutAttachments)
     {
-        BuildAll(OutAttachments, std::index_sequence_for<ColorBlendAttachments...>{});
+        BuildAll(OutAttachments, Meta::MakeIndexSequence<sizeof...(ColorBlendAttachments)>{});
         
         OutState = {};
         OutState.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
         OutState.logicOpEnable = VK_FALSE;
-        OutState.attachmentCount = static_cast<uint32_t>(Count);
-        OutState.pAttachments = OutAttachments.data();
+        OutState.attachmentCount = static_cast<uint32>(Count);
+        OutState.pAttachments = OutAttachments.Data();
         OutState.blendConstants[0] = 0.0f;
         OutState.blendConstants[1] = 0.0f;
         OutState.blendConstants[2] = 0.0f;
@@ -332,8 +329,8 @@ public:
 private:
     template<size_t... Is>
     static void BuildAll(
-        std::array<VkPipelineColorBlendAttachmentState, Count>& OutAttachments,
-        std::index_sequence<Is...>)
+        TStaticArray<VkPipelineColorBlendAttachmentState, Count>& OutAttachments,
+        Meta::IndexSequence<Is...>)
     {
         (ColorBlendAttachments::Build(OutAttachments[Is]), ...);
     }
@@ -373,5 +370,5 @@ private:
     VkPipelineMultisampleStateCreateInfo   MultisampleInfo{};
     VkPipelineInputAssemblyStateCreateInfo InputAssemblyInfo{};
     VkPipelineColorBlendStateCreateInfo    ColorBlendInfo{};
-    std::array<VkPipelineColorBlendAttachmentState, StateColorBlend::Count> ColorBlendAttachments{};
+    TStaticArray<VkPipelineColorBlendAttachmentState, StateColorBlend::Count> ColorBlendAttachments{};
 };

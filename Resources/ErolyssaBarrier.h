@@ -8,7 +8,7 @@
 #include "../Commands/ErolyssaCommandBuffer.h"
 #include "../Core/ErolyssaDevice.h"
 
-enum class FErolyssaBarrierResourceState : uint16_t
+enum class FErolyssaBarrierResourceState : uint16
 {
     None                   = 0,
     VertexRead             = 1 << 0,
@@ -25,11 +25,96 @@ enum class FErolyssaBarrierResourceState : uint16_t
 };
 ENUM_CLASS_FLAGS(FErolyssaBarrierResourceState)
 
+inline void ToVulkan(const FErolyssaBarrierResourceState State, VkPipelineStageFlags2& OutStage, VkAccessFlags2& OutAccess, VkImageLayout* OutLayout = nullptr)
+{
+    OutStage = 0;
+    OutAccess = 0;
+    if(OutLayout) *OutLayout = VK_IMAGE_LAYOUT_GENERAL;
+    
+    if(State == FErolyssaBarrierResourceState::None)
+    {
+        OutStage = VK_PIPELINE_STAGE_2_NONE;
+        if(OutLayout) *OutLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        return;
+    }
+    
+    if(EnumHasAnyFlags(State, FErolyssaBarrierResourceState::VertexRead))
+    {
+        OutStage |= VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT;
+        OutAccess |= VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT;
+    }
+    
+    if(EnumHasAnyFlags(State, FErolyssaBarrierResourceState::IndexRead))
+    {
+        OutStage |= VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT;
+        OutAccess |= VK_ACCESS_2_INDEX_READ_BIT;
+    }
+    
+    if(EnumHasAnyFlags(State, FErolyssaBarrierResourceState::UniformRead))
+    {
+        OutStage |= VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+        OutAccess |= VK_ACCESS_2_UNIFORM_READ_BIT;
+    }
+    
+    if(EnumHasAnyFlags(State, FErolyssaBarrierResourceState::ShaderRead))
+    {
+        OutStage |= VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+        OutAccess |= VK_ACCESS_2_SHADER_READ_BIT;
+        if(OutLayout) *OutLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    }
+    
+    if(EnumHasAnyFlags(State, FErolyssaBarrierResourceState::ShaderWrite))
+    {
+        OutStage |= VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+        OutAccess |= VK_ACCESS_2_SHADER_WRITE_BIT;
+        if(OutLayout) *OutLayout = VK_IMAGE_LAYOUT_GENERAL;
+    }
+    
+    if(EnumHasAnyFlags(State, FErolyssaBarrierResourceState::IndirectBuffer))
+    {
+        OutStage |= VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
+        OutAccess |= VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT;
+    }
+    
+    if(EnumHasAnyFlags(State, FErolyssaBarrierResourceState::ColorAttachment))
+    {
+        OutStage |= VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+        OutAccess |= VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
+        if(OutLayout) *OutLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    }
+    
+    if(EnumHasAnyFlags(State, FErolyssaBarrierResourceState::DepthStencilAttachment))
+    {
+        OutStage |= VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT;
+        OutAccess |= VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        if(OutLayout) *OutLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    }
+    
+    if(EnumHasAnyFlags(State, FErolyssaBarrierResourceState::TransferSrc))
+    {
+        OutStage |= VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+        OutAccess |= VK_ACCESS_2_TRANSFER_READ_BIT;
+        if(OutLayout) *OutLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    }
+    
+    if(EnumHasAnyFlags(State, FErolyssaBarrierResourceState::TransferDst))
+    {
+        OutStage |= VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+        OutAccess |= VK_ACCESS_2_TRANSFER_WRITE_BIT;
+        if(OutLayout) *OutLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    }
+    
+    if(EnumHasAnyFlags(State, FErolyssaBarrierResourceState::Present))
+    {
+        OutStage |= VK_PIPELINE_STAGE_2_NONE;
+        if(OutLayout) *OutLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    }
+}
 struct FErolyssaBarrierBufferInfo
 {
     VkBuffer Buffer;
-    size_t Offset;
-    size_t Size;
+    usize Offset;
+    usize Size;
     FErolyssaBarrierResourceState OldState;
     FErolyssaBarrierResourceState NewState;
 };
@@ -48,13 +133,13 @@ class FErolyssaBarrier
 public:
     static void Insert(
         const FErolyssaCommandBuffer& InCommandBuffer,
-        const std::vector<FErolyssaBarrierBufferInfo>& InBufferBarriers,
-        const std::vector<FErolyssaBarrierTextureInfo>& InTextureBarriers
+        const TArray<FErolyssaBarrierBufferInfo>& InBufferBarriers,
+        const TArray<FErolyssaBarrierTextureInfo>& InTextureBarriers
     )
     {
-        VkBufferMemoryBarrier2* VkBufferBarriers = EROLYSSA_VLA(VkBufferMemoryBarrier2, InBufferBarriers.size());
+        VkBufferMemoryBarrier2* VkBufferBarriers = EROLYSSA_VLA(VkBufferMemoryBarrier2, InBufferBarriers.Num());
         
-        for(uint32_t i = 0; i < InBufferBarriers.size(); ++i)
+        for(uint32 i = 0; i < InBufferBarriers.Num(); ++i)
         {
             VkBufferBarriers[i] = {};
             VkBufferBarriers[i].sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2;
@@ -68,8 +153,8 @@ public:
             ToVulkan(InBufferBarriers[i].NewState, VkBufferBarriers[i].dstStageMask, VkBufferBarriers[i].dstAccessMask);
         }
         
-        VkImageMemoryBarrier2* VkImageBarriers = EROLYSSA_VLA(VkImageMemoryBarrier2, InTextureBarriers.size());
-        for(uint32_t i = 0; i < InTextureBarriers.size(); ++i)
+        VkImageMemoryBarrier2* VkImageBarriers = EROLYSSA_VLA(VkImageMemoryBarrier2, InTextureBarriers.Num());
+        for(uint32 i = 0; i < InTextureBarriers.Num(); ++i)
         {
             VkImageBarriers[i] = {};
             VkImageBarriers[i].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
@@ -88,98 +173,11 @@ public:
         
         VkDependencyInfo DependencyInfo{};
         DependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-        DependencyInfo.bufferMemoryBarrierCount = static_cast<uint32_t>(InBufferBarriers.size());
+        DependencyInfo.bufferMemoryBarrierCount = static_cast<uint32>(InBufferBarriers.Num());
         DependencyInfo.pBufferMemoryBarriers = VkBufferBarriers;
-        DependencyInfo.imageMemoryBarrierCount = static_cast<uint32_t>(InTextureBarriers.size());
+        DependencyInfo.imageMemoryBarrierCount = static_cast<uint32>(InTextureBarriers.Num());
         DependencyInfo.pImageMemoryBarriers = VkImageBarriers;
         
         vkCmdPipelineBarrier2(InCommandBuffer, &DependencyInfo);
-    }
-    
-private:
-    static void ToVulkan(const FErolyssaBarrierResourceState State, VkPipelineStageFlags2& OutStage, VkAccessFlags2& OutAccess, VkImageLayout* OutLayout = nullptr)
-    {
-        OutStage = 0;
-        OutAccess = 0;
-        if(OutLayout) *OutLayout = VK_IMAGE_LAYOUT_GENERAL;
-        
-        if(State == FErolyssaBarrierResourceState::None)
-        {
-            OutStage = VK_PIPELINE_STAGE_2_NONE;
-            if(OutLayout) *OutLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-            return;
-        }
-        
-        if(EnumHasAnyFlags(State, FErolyssaBarrierResourceState::VertexRead))
-        {
-            OutStage |= VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT;
-            OutAccess |= VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT;
-        }
-        
-        if(EnumHasAnyFlags(State, FErolyssaBarrierResourceState::IndexRead))
-        {
-            OutStage |= VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT;
-            OutAccess |= VK_ACCESS_2_INDEX_READ_BIT;
-        }
-        
-        if(EnumHasAnyFlags(State, FErolyssaBarrierResourceState::UniformRead))
-        {
-            OutStage |= VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-            OutAccess |= VK_ACCESS_2_UNIFORM_READ_BIT;
-        }
-        
-        if(EnumHasAnyFlags(State, FErolyssaBarrierResourceState::ShaderRead))
-        {
-            OutStage |= VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
-            OutAccess |= VK_ACCESS_2_SHADER_READ_BIT;
-            if(OutLayout) *OutLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        }
-        
-        if(EnumHasAnyFlags(State, FErolyssaBarrierResourceState::ShaderWrite))
-        {
-            OutStage |= VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
-            OutAccess |= VK_ACCESS_2_SHADER_WRITE_BIT;
-            if(OutLayout) *OutLayout = VK_IMAGE_LAYOUT_GENERAL;
-        }
-        
-        if(EnumHasAnyFlags(State, FErolyssaBarrierResourceState::IndirectBuffer))
-        {
-            OutStage |= VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
-            OutAccess |= VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT;
-        }
-        
-        if(EnumHasAnyFlags(State, FErolyssaBarrierResourceState::ColorAttachment))
-        {
-            OutStage |= VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
-            OutAccess |= VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
-            if(OutLayout) *OutLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        }
-        
-        if(EnumHasAnyFlags(State, FErolyssaBarrierResourceState::DepthStencilAttachment))
-        {
-            OutStage |= VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT;
-            OutAccess |= VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-            if(OutLayout) *OutLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        }
-        
-        if(EnumHasAnyFlags(State, FErolyssaBarrierResourceState::TransferSrc))
-        {
-            OutStage |= VK_PIPELINE_STAGE_2_TRANSFER_BIT;
-            OutAccess |= VK_ACCESS_2_TRANSFER_READ_BIT;
-            if(OutLayout) *OutLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-        }
-        
-        if(EnumHasAnyFlags(State, FErolyssaBarrierResourceState::TransferDst))
-        {
-            OutStage |= VK_PIPELINE_STAGE_2_TRANSFER_BIT;
-            OutAccess |= VK_ACCESS_2_TRANSFER_WRITE_BIT;
-            if(OutLayout) *OutLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        }
-        
-        if(EnumHasAnyFlags(State, FErolyssaBarrierResourceState::Present))
-        {
-            OutStage |= VK_PIPELINE_STAGE_2_NONE;
-            if(OutLayout) *OutLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-        }
     }
 };

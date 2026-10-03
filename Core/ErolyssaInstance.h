@@ -4,9 +4,8 @@
 
 #include "../ErolyssaIncludeVulkan.h"
 #include "../ErolyssaTatemae.h"
+#include "../ErolyssaAliases.h"
 #include "../Erolyssa.h"
-
-#include <vector>
 
 enum class EErolyssaVersion
 {
@@ -17,16 +16,16 @@ class FErolyssaInstance
 {
     
 public:
-    explicit FErolyssaInstance(const EErolyssaVersion InVersion, const std::vector<const char*>& InRequiredExtensions, const std::vector<const char*>& InRequiredLayers)
+    explicit FErolyssaInstance(const EErolyssaVersion InVersion, const TArray<const char*>& InRequiredExtensions, const TArray<const char*>& InRequiredLayers)
     {
 #if EROLYSSA_ENABLE_VALIDATION_LAYERS
-        uint32_t LayersCount;
+        uint32 LayersCount;
         vkEnumerateInstanceLayerProperties(&LayersCount, nullptr);
         VkLayerProperties* LayerProperties = EROLYSSA_VLA(VkLayerProperties, LayersCount);
         vkEnumerateInstanceLayerProperties(&LayersCount, LayerProperties);
         
         bool bLayerFound = false;
-        for(uint32_t i = 0; i < LayersCount; ++i)
+        for(uint32 i = 0; i < LayersCount; ++i)
             if(strcmp("VK_LAYER_KHRONOS_validation", LayerProperties[i].layerName) == 0) 
             {
                 bLayerFound = true;
@@ -44,34 +43,34 @@ public:
         AppInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
         AppInfo.apiVersion = ToVulkan(InVersion);
         
-        std::vector<const char*> Extensions;
+        TArray<const char*> Extensions;
         {
 #if EROLYSSA_ENABLE_VALIDATION_LAYERS
-            Extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+            Extensions.Add(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 #endif
             
             for(const char* Extension : InRequiredExtensions)
-                Extensions.push_back(Extension);
+                Extensions.Add(Extension);
         }
         
-        std::vector<const char*> Layers;
+        TArray<const char*> Layers;
         {
 #if EROLYSSA_ENABLE_VALIDATION_LAYERS
-            Layers.push_back("VK_LAYER_KHRONOS_validation");
+            Layers.Add("VK_LAYER_KHRONOS_validation");
 #endif
             
             for(const char* L : InRequiredLayers)
-                Layers.push_back(L);
+                Layers.Add(L);
         }
         
         VkInstanceCreateInfo CreateInfo{};
         CreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         CreateInfo.pNext = nullptr;
         CreateInfo.pApplicationInfo = &AppInfo;
-        CreateInfo.enabledExtensionCount = static_cast<uint32_t>(Extensions.size());
-        CreateInfo.ppEnabledExtensionNames = Extensions.data();
-        CreateInfo.enabledLayerCount       = static_cast<uint32_t>(Layers.size());
-        CreateInfo.ppEnabledLayerNames     = Layers.data();
+        CreateInfo.enabledExtensionCount = static_cast<uint32>(Extensions.Num());
+        CreateInfo.ppEnabledExtensionNames = Extensions.Data();
+        CreateInfo.enabledLayerCount       = static_cast<uint32>(Layers.Num());
+        CreateInfo.ppEnabledLayerNames     = Layers.Data();
         
 #if EROLYSSA_ENABLE_VALIDATION_LAYERS
         VkDebugUtilsMessengerCreateInfoEXT DebugCreateInfo{};
@@ -116,7 +115,7 @@ public:
 private:
     VkInstance Handle = VK_NULL_HANDLE;
     
-    static uint32_t ToVulkan(const EErolyssaVersion InApiVersion)
+    static uint32 ToVulkan(const EErolyssaVersion InApiVersion)
     {
         switch (InApiVersion)
         {

@@ -2,7 +2,9 @@
 
 #pragma once
 
-#include <vulkan/vulkan.h>
+#include "../ErolyssaIncludeVulkan.h"
+#include "../ErolyssaTatemae.h"
+#include "../ErolyssaAliases.h"
 
 class FErolyssaPhysicalDevice;
 
@@ -15,7 +17,7 @@ public:
     
     void* Map();
     void Unmap();
-    bool CopyFrom(const void* InData, const int32_t InSize);
+    bool CopyFrom(const void* InData, const int32 InSize);
     
     VkBuffer GetHandle() const { return BufferHandle; }
     VkDeviceMemory GetMemoryHandle() const { return MemoryHandle; }
@@ -29,5 +31,5 @@ private:
     FErolyssaSize Size = 0;
     void* MappedPointer = nullptr;
 
-    static uint32_t FindMemoryType(VkPhysicalDevice PhysicalDevice, uint32_t TypeFilter, VkMemoryPropertyFlags Properties);
+    static uint32 FindMemoryType(VkPhysicalDevice PhysicalDevice, uint32 TypeFilter, VkMemoryPropertyFlags Properties);
 };

@@ -6,7 +6,7 @@
 #include "../ErolyssaTatemae.h"
 #include "../Core/ErolyssaDevice.h"
 
-enum class EErolyssaFilter : uint8_t
+enum class EErolyssaFilter : uint8
 {
     Nearest = 0,
     Linear  = 1,
@@ -22,7 +22,7 @@ inline VkFilter ToVulkan(EErolyssaFilter InFilter)
     return VK_FILTER_NEAREST;
 }
 
-enum class EErolyssaSamplerAddressMode : uint8_t
+enum class EErolyssaSamplerAddressMode : uint8
 {
     Repeat             = 0,
     MirroredRepeat     = 1,
@@ -44,7 +44,7 @@ inline VkSamplerAddressMode ToVulkan(EErolyssaSamplerAddressMode InMode)
     return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 }
 
-enum class EErolyssaBorderColor : uint8_t
+enum class EErolyssaBorderColor : uint8
 {
     FloatTransparentBlack = 0,
     IntTransparentBlack   = 1,

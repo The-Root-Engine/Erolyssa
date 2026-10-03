@@ -8,9 +8,9 @@
 
 struct FErolyssaDescriptorBinding
 {
-    uint32_t             Binding         = 0;
+    uint32             Binding         = 0;
     VkDescriptorType     Type            = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    uint32_t             Count           = 1;
+    uint32             Count           = 1;
     VkShaderStageFlags   StageFlags      = VK_SHADER_STAGE_ALL;
     const VkSampler*     ImmutableSampler = nullptr;
 };
@@ -24,8 +24,8 @@ public:
         const std::initializer_list<FErolyssaDescriptorBinding> InBindings
     ) : Device(InDevice)
     {
-        std::vector<VkDescriptorSetLayoutBinding> VkBindings;
-        VkBindings.reserve(InBindings.size());
+        TArray<VkDescriptorSetLayoutBinding> VkBindings;
+        VkBindings.Reserve(InBindings.size());
         
         for(const auto& B : InBindings)
         {
@@ -35,13 +35,13 @@ public:
             VkB.descriptorCount = B.Count;
             VkB.stageFlags = B.StageFlags;
             VkB.pImmutableSamplers = B.ImmutableSampler;
-            VkBindings.push_back(VkB);
+            VkBindings.Add(VkB);
         }
         
         VkDescriptorSetLayoutCreateInfo Info{};
         Info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        Info.bindingCount = static_cast<uint32_t>(VkBindings.size());
-        Info.pBindings = VkBindings.data();
+        Info.bindingCount = static_cast<uint32>(VkBindings.Num());
+        Info.pBindings = VkBindings.Data();
         
         check(vkCreateDescriptorSetLayout(InDevice, &Info, nullptr, &Handle) == VK_SUCCESS, "FErolyssaDescriptorSetLayout: failed to create!");
     }

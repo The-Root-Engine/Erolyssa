@@ -2,11 +2,13 @@
 
 #pragma once
 
+#include "../ErolyssaIncludeVulkan.h"
+#include "../ErolyssaTatemae.h"
+#include "../ErolyssaAliases.h"
 #include "ErolyssaDevice.h"
 #include "ErolyssaSurface.h"
 
 #include <SDL_video.h>
-#include <algorithm>
 
 class FErolyssaSwapchain
 {
@@ -15,8 +17,8 @@ public:
     FErolyssaSwapchain(
         const FErolyssaDevice& InDevice,
         const FErolyssaSurface& InSurface,
-        uint32_t InWidth,
-        uint32_t InHeight
+        uint32 InWidth,
+        uint32 InHeight
     ) : Device(InDevice)
     {
         // Device хранит ссылку на PhysicalDevice
@@ -27,18 +29,18 @@ public:
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(Device, Surface, &Caps);
         
         // 2. Formats
-        uint32_t FormatCount = 0;
+        uint32 FormatCount = 0;
         vkGetPhysicalDeviceSurfaceFormatsKHR(Device, Surface, &FormatCount, nullptr);
         check(FormatCount > 0, "FErolyssaSwapchain: no surface formats!");
-        std::vector<VkSurfaceFormatKHR> Formats(FormatCount);
-        vkGetPhysicalDeviceSurfaceFormatsKHR(Device, Surface, &FormatCount, Formats.data());
+        TArray<VkSurfaceFormatKHR> Formats(FormatCount);
+        vkGetPhysicalDeviceSurfaceFormatsKHR(Device, Surface, &FormatCount, Formats.Data());
         
         // 3. Present modes
-        uint32_t ModeCount = 0;
+        uint32 ModeCount = 0;
         vkGetPhysicalDeviceSurfacePresentModesKHR(Device, Surface, &ModeCount, nullptr);
         check(ModeCount > 0, "FErolyssaSwapchain: no present modes!");
-        std::vector<VkPresentModeKHR> Modes(ModeCount);
-        vkGetPhysicalDeviceSurfacePresentModesKHR(Device, Surface, &ModeCount, Modes.data());
+        TArray<VkPresentModeKHR> Modes(ModeCount);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(Device, Surface, &ModeCount, Modes.Data());
         
         // 4. Выбор параметров
         VkSurfaceFormatKHR SurfaceFormat = ChooseSurfaceFormat(Formats);
@@ -48,7 +50,7 @@ public:
         ImageFormat = SurfaceFormat.format;
         
         // 5. Количество images
-        uint32_t ImageCount = Caps.minImageCount + 1;
+        uint32 ImageCount = Caps.minImageCount + 1;
         if(Caps.maxImageCount > 0 && ImageCount > Caps.maxImageCount)
             ImageCount = Caps.maxImageCount;
         
@@ -64,9 +66,9 @@ public:
         CreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
         
         // 7. Sharing mode
-        uint32_t GraphicsFamily = Device.GetGraphicsFamily();
-        uint32_t PresentFamily = Device.GetPresentFamily();
-        uint32_t FamilyIndices[] = { GraphicsFamily, PresentFamily };
+        uint32 GraphicsFamily = Device.GetGraphicsFamily();
+        uint32 PresentFamily = Device.GetPresentFamily();
+        uint32 FamilyIndices[] = { GraphicsFamily, PresentFamily };
         
         if(GraphicsFamily != PresentFamily)
         {
@@ -88,10 +90,10 @@ public:
         check(vkCreateSwapchainKHR(Device, &CreateInfo, nullptr, &Handle) == VK_SUCCESS, "FErolyssaSwapchain: failed to create swapchain!");
         
         // 8. Получаем images
-        uint32_t ActualCount = 0;
+        uint32 ActualCount = 0;
         vkGetSwapchainImagesKHR(Device, Handle, &ActualCount, nullptr);
-        Images.resize(ActualCount);
-        vkGetSwapchainImagesKHR(Device, Handle, &ActualCount, Images.data());
+        Images.SetNum(ActualCount);
+        vkGetSwapchainImagesKHR(Device, Handle, &ActualCount, Images.Data());
         
         // 9. Создаём views
         CreateImageViews();
@@ -111,10 +113,10 @@ public:
     
     VkFormat GetImageFormat() const { return ImageFormat; }
     VkExtent2D GetExtent() const { return Extent; }
-    uint32_t GetImageCount() const { return static_cast<uint32_t>(Images.size()); }
+    uint32 GetImageCount() const { return static_cast<uint32>(Images.Num()); }
     
-    VkImage GetImage(const uint32_t InIndex) const { return Images[InIndex]; }
-    VkImageView GetImageView(const uint32_t InIndex) const { return ImageViews[InIndex]; }
+    VkImage GetImage(const uint32 InIndex) const { return Images[InIndex]; }
+    VkImageView GetImageView(const uint32 InIndex) const { return ImageViews[InIndex]; }
 
 private:
     const FErolyssaDevice& Device;
@@ -123,10 +125,10 @@ private:
     VkFormat ImageFormat = VK_FORMAT_UNDEFINED;
     VkExtent2D Extent{};
     
-    std::vector<VkImage> Images;
-    std::vector<VkImageView> ImageViews;
+    TArray<VkImage> Images;
+    TArray<VkImageView> ImageViews;
     
-    static VkSurfaceFormatKHR ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& InFormats)
+    static VkSurfaceFormatKHR ChooseSurfaceFormat(const TArray<VkSurfaceFormatKHR>& InFormats)
     {
         for(const auto& F : InFormats)
             if(F.format == VK_FORMAT_B8G8R8A8_SRGB && F.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
@@ -135,7 +137,7 @@ private:
         return InFormats[0];
     }
     
-    static VkPresentModeKHR ChoosePresentMode(const std::vector<VkPresentModeKHR>& InModes)
+    static VkPresentModeKHR ChoosePresentMode(const TArray<VkPresentModeKHR>& InModes)
     {
         for(const VkPresentModeKHR Mode : InModes)
             if(Mode == VK_PRESENT_MODE_MAILBOX_KHR)
@@ -144,22 +146,21 @@ private:
         return VK_PRESENT_MODE_FIFO_KHR;
     }
     
-    static VkExtent2D ChooseExtent(const VkSurfaceCapabilitiesKHR& InCaps, const uint32_t InWidth, const uint32_t InHeight)
+    static VkExtent2D ChooseExtent(const VkSurfaceCapabilitiesKHR& InCaps, const uint32 InWidth, const uint32 InHeight)
     {
-        if(InCaps.currentExtent.width != std::numeric_limits<uint32_t>::max())
+        if(InCaps.currentExtent.width != UINT32_MAX)
             return InCaps.currentExtent;
         
         VkExtent2D ResultExtent{};
-        ResultExtent.width  = std::clamp(InWidth,  InCaps.minImageExtent.width,  InCaps.maxImageExtent.width);
-        ResultExtent.height = std::clamp(InHeight, InCaps.minImageExtent.height, InCaps.maxImageExtent.height);
+        ResultExtent.width  = FMath::Clamp(InWidth,  InCaps.minImageExtent.width,  InCaps.maxImageExtent.width);
+        ResultExtent.height = FMath::Clamp(InHeight, InCaps.minImageExtent.height, InCaps.maxImageExtent.height);
         return ResultExtent;
     }
     
     void CreateImageViews()
     {
-        ImageViews.resize(Images.size());
-        
-        for(size_t i = 0; i < Images.size(); ++i)
+        ImageViews.SetNum(Images.Num());
+        for(size_t i = 0; i < Images.Num(); ++i)
         {
             VkImageViewCreateInfo CreateInfo{};
             CreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -175,7 +176,7 @@ private:
             CreateInfo.subresourceRange.levelCount = 1;
             CreateInfo.subresourceRange.baseArrayLayer = 0;
             CreateInfo.subresourceRange.layerCount = 1;
-        
+            
             check(vkCreateImageView(Device, &CreateInfo, nullptr, &ImageViews[i]) == VK_SUCCESS, "FErolyssaSwapchain: failed to create image view %zu", i);
         }
     }

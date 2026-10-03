@@ -16,7 +16,7 @@ public:
     explicit FErolyssaDevice(
         const FErolyssaPhysicalDevice& InPhysicalDevice, const VkSurfaceKHR& InSurface,
         const bool bNeedGraphics, const bool bNeedCompute, const bool bNeedTransfer,
-        const std::vector<const char*>& InRequiredExtensions
+        const TArray<const char*>& InRequiredExtensions
     ) : PhysicalDevice(InPhysicalDevice)
     {
         check(InSurface != VK_NULL_HANDLE, "FErolyssaDevice: bNeedPresent = true, but surface is null!");
@@ -56,30 +56,30 @@ public:
         }
         */
         
-        std::set<uint32_t> UniqueFamilies;
+        std::set<uint32> UniqueFamilies;
         if(GraphicsFamily != 0xFFFFFFFF) UniqueFamilies.insert(GraphicsFamily);
         if(ComputeFamily  != 0xFFFFFFFF) UniqueFamilies.insert(ComputeFamily);
         if(TransferFamily != 0xFFFFFFFF) UniqueFamilies.insert(TransferFamily);
         if(PresentFamily  != 0xFFFFFFFF) UniqueFamilies.insert(PresentFamily);
         
         constexpr float Priority = 1.0f;
-        std::vector<VkDeviceQueueCreateInfo> QueueInfos;
-        QueueInfos.reserve(UniqueFamilies.size());
+        TArray<VkDeviceQueueCreateInfo> QueueInfos;
+        QueueInfos.Reserve(UniqueFamilies.size());
         
-        for(const uint32_t Family : UniqueFamilies)
+        for(const uint32 Family : UniqueFamilies)
         {
             VkDeviceQueueCreateInfo QueueInfo{};
             QueueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
             QueueInfo.queueFamilyIndex = Family;
             QueueInfo.queueCount = 1;
             QueueInfo.pQueuePriorities = &Priority;
-            QueueInfos.push_back(QueueInfo);
+            QueueInfos.Add(QueueInfo);
         }
         
-        std::vector<const char*> Extensions;
-        Extensions.reserve(InRequiredExtensions.size());
+        TArray<const char*> Extensions;
+        Extensions.Reserve(InRequiredExtensions.Num());
         for(const char* Ext : InRequiredExtensions)
-            Extensions.push_back(Ext);
+            Extensions.Add(Ext);
         
         for(const char* Ext : Extensions)
             check(PhysicalDevice.SupportsExtension(Ext), "FErolyssaDevice: GPU does not support extension '%s'", Ext);
@@ -108,11 +108,11 @@ public:
         VkDeviceCreateInfo CreateInfo{};
         CreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
         CreateInfo.pNext = &Features13;
-        CreateInfo.queueCreateInfoCount = static_cast<uint32_t>(QueueInfos.size());
-        CreateInfo.pQueueCreateInfos = QueueInfos.data();
+        CreateInfo.queueCreateInfoCount = static_cast<uint32>(QueueInfos.Num());
+        CreateInfo.pQueueCreateInfos = QueueInfos.Data();
         CreateInfo.pEnabledFeatures = &Features; 
-        CreateInfo.enabledExtensionCount = static_cast<uint32_t>(Extensions.size());
-        CreateInfo.ppEnabledExtensionNames = Extensions.empty() ? nullptr : Extensions.data();
+        CreateInfo.enabledExtensionCount = static_cast<uint32>(Extensions.Num());
+        CreateInfo.ppEnabledExtensionNames = Extensions.IsEmpty() ? nullptr : Extensions.Data();
         CreateInfo.enabledLayerCount = 0;
         CreateInfo.ppEnabledLayerNames = nullptr;
         

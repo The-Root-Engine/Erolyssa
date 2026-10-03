@@ -7,7 +7,7 @@
 #include "../ErolyssaAliases.h"
 #include "../Core/ErolyssaDevice.h"
 
-enum class EErolyssaCommandPoolCreateFlags : uint8_t
+enum class EErolyssaCommandPoolCreateFlags : uint8
 {
     None                 = 0,
     Transient            = 1 << 0,  // буферы живут недолго — драйвер может оптимизировать
@@ -16,13 +16,13 @@ enum class EErolyssaCommandPoolCreateFlags : uint8_t
 };
 ENUM_CLASS_FLAGS(EErolyssaCommandPoolCreateFlags);
 
-enum class EErolyssaCommandBufferLevel : uint8_t
+enum class EErolyssaCommandBufferLevel : uint8
 {
     Primary   = 0,
     Secondary = 1,
 };
 
-enum class EErolyssaCommandPoolResetFlags : uint8_t
+enum class EErolyssaCommandPoolResetFlags : uint8
 {
     None             = 0,
     ReleaseResources = 1 << 0,

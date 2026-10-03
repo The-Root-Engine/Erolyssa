@@ -7,7 +7,7 @@
 #include "../Erolyssa.h"
 #include "../Core/ErolyssaDevice.h"
 
-enum class EErolyssaBufferUsage : uint8_t
+enum class EErolyssaBufferUsage : uint8
 {
     None          = 0,
     Vertex        = 1 << 0,
@@ -21,7 +21,7 @@ enum class EErolyssaBufferUsage : uint8_t
 };
 ENUM_CLASS_FLAGS(EErolyssaBufferUsage)
 
-enum class EErolyssaMemoryProperty : uint8_t
+enum class EErolyssaMemoryProperty : uint8
 {
     None            = 0,
     DeviceLocal     = 1 << 0,  // быстрая для GPU, недоступна CPU
@@ -128,12 +128,12 @@ public:
     bool IsDeviceLocal() const { return EnumHasAnyFlags(MemoryProperties, EErolyssaMemoryProperty::DeviceLocal); }
     */
     
-    static uint32_t FindMemoryType(const VkPhysicalDevice InPhysical, const uint32_t InTypeFilter, const VkMemoryPropertyFlags InProperties)
+    static uint32 FindMemoryType(const VkPhysicalDevice InPhysical, const uint32 InTypeFilter, const VkMemoryPropertyFlags InProperties)
     {
         VkPhysicalDeviceMemoryProperties MemProps{};
         vkGetPhysicalDeviceMemoryProperties(InPhysical, &MemProps);
         
-        for(uint32_t i = 0; i < MemProps.memoryTypeCount; ++i)
+        for(uint32 i = 0; i < MemProps.memoryTypeCount; ++i)
             if((InTypeFilter & (1u << i)) && (MemProps.memoryTypes[i].propertyFlags & InProperties) == InProperties)
                 return i;
         

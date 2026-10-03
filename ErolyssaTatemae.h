@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <cstdarg>
-#include <cstdio>
+#include <stdio.h>
+#include <stdarg.h>
 
 class FErolyssaDebug
 {
@@ -87,6 +87,16 @@ public:
     }
 };
 
+#include "../Basement/Aliases/Common.h"
+#include "../Basement/Macros/Assertion.h"
+#include "../Basement/Misc/EnumClassFlags.h"
+#include "../Basement/HAL/PlatformDebug.h"
+#include "../Basement/Containers/Array.h"
+#include "../Basement/Containers/StaticArray.h"
+#include "../Basement/Meta.h"
+#include "../Basement/Math/Math.h"
+
+/*
 // From "Root Engine / Basement"
 #define check(LikelyExpression, Format, ...) \
     do { \
@@ -116,3 +126,4 @@ template<typename Enum> constexpr bool EnumHasAnyFlags(Enum Flags, Enum Contains
 
 template<typename Enum> void EnumAddFlags(Enum& Flags, Enum FlagsToAdd) { Flags |= FlagsToAdd; }
 template<typename Enum> void EnumRemoveFlags(Enum& Flags, Enum FlagsToRemove) { Flags &= ~FlagsToRemove; }
+*/

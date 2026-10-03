@@ -30,7 +30,7 @@ public:
     operator VkFence() const { return Handle; }
     operator const VkFence*() const { return &Handle; }
     
-    void Wait(const uint64_t InTimeout = UINT64_MAX) const { vkWaitForFences(Device, 1, &Handle, VK_TRUE, InTimeout); }
+    void Wait(const uint64 InTimeout = UINT64_MAX) const { vkWaitForFences(Device, 1, &Handle, VK_TRUE, InTimeout); }
     void Reset() const { vkResetFences(Device, 1, &Handle); }
     bool IsSignaled() const { return vkGetFenceStatus(Device, Handle) == VK_SUCCESS; }
 

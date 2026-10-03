@@ -39,7 +39,7 @@ public:
     operator const VkDescriptorSet*() const { return &Handle; }
     bool IsValid() const { return Handle != VK_NULL_HANDLE; }
     
-    void WriteStorageBuffer(uint32_t InBinding, const FErolyssaBuffer& InBuffer) const
+    void WriteStorageBuffer(uint32 InBinding, const FErolyssaBuffer& InBuffer) const
     {
         VkDescriptorBufferInfo BufInfo{};
         BufInfo.buffer = InBuffer;
@@ -57,7 +57,7 @@ public:
         vkUpdateDescriptorSets(Device, 1, &Write, 0, nullptr);
     }
     
-    void WriteUniformBuffer(uint32_t InBinding, const FErolyssaBuffer& InBuffer) const
+    void WriteUniformBuffer(uint32 InBinding, const FErolyssaBuffer& InBuffer) const
     {
         VkDescriptorBufferInfo BufInfo{};
         BufInfo.buffer = InBuffer;
@@ -75,7 +75,7 @@ public:
         vkUpdateDescriptorSets(Device, 1, &Write, 0, nullptr);
     }
     
-    void WriteCombinedImageSampler(uint32_t InBinding, VkImageView InView, const FErolyssaSampler& InSampler) const
+    void WriteCombinedImageSampler(uint32 InBinding, VkImageView InView, const FErolyssaSampler& InSampler) const
     {
         VkDescriptorImageInfo ImageInfo{};
         ImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;

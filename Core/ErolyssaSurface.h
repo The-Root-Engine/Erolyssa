@@ -2,7 +2,9 @@
 
 #pragma once
 
-#include "ErolyssaInstance.h"
+#include "../ErolyssaIncludeVulkan.h"
+#include "../ErolyssaTatemae.h"
+#include "../ErolyssaAliases.h"
 
 #include <SDL_video.h>
 #include <SDL_vulkan.h>
