@@ -122,9 +122,9 @@ struct FErolyssaBarrierBufferInfo
 struct FErolyssaBarrierTextureInfo
 {
     VkImage Image;
+    VkImageAspectFlags AspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     FErolyssaBarrierResourceState OldState;
     FErolyssaBarrierResourceState NewState;
-    VkImageAspectFlags AspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 };
 
 class FErolyssaBarrier
