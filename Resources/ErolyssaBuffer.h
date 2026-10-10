@@ -95,7 +95,7 @@ public:
         // check(IsHostVisible(), "FErolyssaBuffer::Upload: buffer is not host-visible!");
         
         void* Data = Map();
-        memcpy(Data, InData, InSize);
+        memcpy(static_cast<uint8_t*>(Data) + InOffset, InData, InSize);
         Unmap();
     }
     
