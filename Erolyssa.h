@@ -9,11 +9,11 @@ inline uint32 ErolyssaFindMemoryType(const VkPhysicalDevice InPhysical, const ui
 {
     VkPhysicalDeviceMemoryProperties MemProps{};
     vkGetPhysicalDeviceMemoryProperties(InPhysical, &MemProps);
-        
+    
     for(uint32 i = 0; i < MemProps.memoryTypeCount; ++i)
         if((InTypeFilter & (1u << i)) && (MemProps.memoryTypes[i].propertyFlags & InProperties) == InProperties)
             return i;
-        
+    
     FErolyssaDebug::Terminate("FErolyssaBuffer: no suitable memory type found!");
     return 0xFFFFFFFF;
 }
